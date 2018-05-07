@@ -6,22 +6,26 @@ from oauth2client import file, client, tools
 import googleapiclient
 import argparse
 import pyperclip
+import pathlib
+import sys
 
 
 def parse_args():
-    parse = argparse.ArgumentParser()
+    parse = argparse.ArgumentParser(parents=[tools.argparser])
     parse.add_argument('file', help='file to upload', type=str)
     args = parse.parse_args()
     return args
 
 
-def setup_api():
+def setup_api(args):
     SCOPES = 'https://www.googleapis.com/auth/drive'
-    store = file.Storage('credentials.json')
+    store = file.Storage(
+        '{}/.gpush/credentials.json'.format(pathlib.Path.home()))
     creds = store.get()
     if not creds or creds.invalid:
-        flow = client.flow_from_clientsecrets('client_secret.json', SCOPES)
-        creds = tools.run_flow(flow, store)
+        flow = client.flow_from_clientsecrets(
+            '{}/.gpush/client_secret.json'.format(pathlib.Path.home()), SCOPES)
+        creds = tools.run_flow(flow, store, args)
     return build('drive', 'v3', http=creds.authorize(Http()))
 
 
@@ -72,8 +76,15 @@ def push_file(service, file, folder_id):
 
 
 def main():
+    pathlib.Path('{}/.gpush'.format(pathlib.Path.home())
+                 ).mkdir(parents=True, exist_ok=True)
     args = parse_args()
-    service = setup_api()
+    try:
+        service = setup_api(args)
+    except Exception as e:
+        print(e, file=sys.stderr, end='\n\n')
+        print("Seems you did'nt configure the Google API. Please read the README.md file!", file=sys.stderr)
+        exit(1)
     folder_id = get_push_folder(service)
     file = push_file(service, args.file, folder_id)
     print(file.get('webContentLink'))

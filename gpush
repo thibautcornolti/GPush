@@ -1,0 +1,86 @@
+#!/usr/bin/env python3.5
+
+from apiclient.discovery import build
+from httplib2 import Http
+from oauth2client import file, client, tools
+import googleapiclient
+import argparse
+import zipfile
+import pyperclip
+
+
+def parse_args():
+    parse = argparse.ArgumentParser()
+    parse.add_argument('file', help='file to upload', type=str)
+    args = parse.parse_args()
+    return args
+
+
+def setup_api():
+    SCOPES = 'https://www.googleapis.com/auth/drive'
+    store = file.Storage('credentials.json')
+    creds = store.get()
+    if not creds or creds.invalid:
+        flow = client.flow_from_clientsecrets('client_secret.json', SCOPES)
+        creds = tools.run_flow(flow, store)
+    return build('drive', 'v3', http=creds.authorize(Http()))
+
+
+def get_push_folder(service):
+    folder = service.files().list(
+        q="name='gpush'",
+        pageSize=100,
+        fields="files(id, mimeType)"
+    ).execute()
+    for obj in folder.get('files'):
+        if obj.get('mimeType') == 'application/vnd.google-apps.folder':
+            return obj.get('id')
+
+    return service.files().create(
+        body={
+            'name': 'gpush',
+            'mimeType': 'application/vnd.google-apps.folder',
+        },
+        fields='id',
+    ).execute().get('id')
+
+
+def push_file(service, file, folder_id):
+    filepath = file
+    filename = filepath.split('/')[-1]
+    media = googleapiclient.http.MediaFileUpload(filepath)
+    file = service.files().create(
+        body={
+            'name': filename,
+            'originalFilename': filepath,
+            'parents': [folder_id],
+        },
+        media_body=media,
+        fields='id,webContentLink',
+    ).execute()
+
+    batch = service.new_batch_http_request()
+    batch.add(service.permissions().create(
+        fileId=file.get('id'),
+        body={
+            'type': 'anyone',
+            'role': 'reader',
+        },
+        fields='',
+    ))
+    batch.execute()
+    return file
+
+
+def main():
+    args = parse_args()
+    service = setup_api()
+    folder_id = get_push_folder(service)
+    file = push_file(service, args.file, folder_id)
+    print(file.get('webContentLink'))
+    pyperclip.copy(file.get('webContentLink'))
+    print('Link copied!')
+
+
+if __name__ == '__main__':
+    main()

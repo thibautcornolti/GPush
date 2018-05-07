@@ -28,7 +28,7 @@ def setup_api():
 
 def get_push_folder(service):
     folder = service.files().list(
-        q="name='gpush'",
+        q="name='GPush'",
         pageSize=100,
         fields="files(id, mimeType)"
     ).execute()
@@ -38,7 +38,7 @@ def get_push_folder(service):
 
     return service.files().create(
         body={
-            'name': 'gpush',
+            'name': 'GPush',
             'mimeType': 'application/vnd.google-apps.folder',
         },
         fields='id',

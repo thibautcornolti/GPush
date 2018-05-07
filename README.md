@@ -15,3 +15,13 @@ $> gpush README.md
 https://drive.google.com/a/x/uc?id=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx&export=download
 Link copied!
 ```
+
+## Requirements
+
+Install the python3 dependencies:
+
+`pip3 install -r requirements.txt`
+
+
+### Google API access
+Follow the instructions at https://developers.google.com/sheets/api/quickstart/python to setup credentials and API access.

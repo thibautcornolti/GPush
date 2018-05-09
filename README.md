@@ -25,6 +25,6 @@ Install the python3 dependencies:
 
 ### Google API access
 
-Follow the instructions at https://developers.google.com/sheets/api/quickstart/python to setup credentials and API access.
+Follow the instructions at https://developers.google.com/drive/v3/web/quickstart/python to setup credentials and API access.
 
 You need to put the `client_secret.json` file in the `~/.gpush` folder.
